@@ -61,7 +61,8 @@
   .vector-target-armed,
   .balance-op-left,
   .balance-op-right,
-  .slope-success-pulse {
+  .slope-success-pulse,
+  .area-handle-success {
     animation: none !important;
   }
 
@@ -321,4 +322,45 @@
 
 .slope-measure-label {
   pointer-events: none;
+}
+
+
+.area-handle-hit {
+  cursor: grab;
+  touch-action: none;
+}
+
+.area-handle-hit:active {
+  cursor: grabbing;
+}
+
+.area-cell-active {
+  transition: opacity 120ms ease-out, transform 120ms ease-out;
+  transform-origin: center;
+}
+
+.area-triangle-fill {
+  transition: opacity 120ms ease-out;
+}
+
+@keyframes area-handle-success {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.9);
+    transform-origin: center;
+  }
+  55% {
+    opacity: 1;
+    transform: scale(1.12);
+    transform-origin: center;
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    transform-origin: center;
+  }
+}
+
+.area-handle-success {
+  animation: area-handle-success 300ms ease-out;
 }
