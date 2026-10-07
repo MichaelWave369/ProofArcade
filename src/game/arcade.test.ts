@@ -42,7 +42,16 @@ import { auditOrbit } from "./orbit/levels.ts";
 import { auditOrbitPlay } from "./orbit/plays.ts";
 import { auditPrime } from "./prime/levels.ts";
 import { auditSlope } from "./slope/levels.ts";
-import { auditLine } from "./slope/line.ts";
+import {
+  LINE_PLAYS,
+  auditLine,
+  lineSolved,
+  onLine,
+  riseRun,
+  samePoint,
+  slopeText,
+  snapPoint,
+} from "./slope/line.ts";
 import { auditVector } from "./vector/levels.ts";
 import {
   DRIFT_LEVELS,
@@ -364,6 +373,42 @@ describe("new stations", () => {
           assert.equal(next.right.a * op.n, play.start.right.a);
           assert.equal(next.right.b * op.n, play.start.right.b);
         }
+      }
+    }
+  });
+
+
+  it("snaps direct Slope manipulation to the lattice without changing line truth", () => {
+    assert.deepEqual(snapPoint({ x: 2.49, y: -1.51 }, 4), { x: 2, y: -2 });
+    assert.deepEqual(snapPoint({ x: 9.8, y: -9.8 }, 4), { x: 4, y: -4 });
+
+    for (const play of LINE_PLAYS) {
+      const snappedSolution = snapPoint(play.solution, play.span);
+      assert.equal(samePoint(snappedSolution, play.solution), true, `slope level ${play.id} solution left lattice`);
+      assert.equal(lineSolved(play, snappedSolution), true, `slope level ${play.id} snapped solution failed`);
+
+      const delta = riseRun(play.anchor, play.solution);
+      if (play.aim === "slope") {
+        assert.equal(slopeText(play.anchor, play.solution), play.slope);
+        if (delta.run !== 0 || delta.rise !== 0) {
+          const doubled = snapPoint(
+            {
+              x: play.anchor.x + delta.run * 2,
+              y: play.anchor.y + delta.rise * 2,
+            },
+            play.span,
+          );
+          if (!samePoint(doubled, play.anchor) && Math.abs(doubled.x) <= play.span && Math.abs(doubled.y) <= play.span) {
+            const doubledDelta = riseRun(play.anchor, doubled);
+            if (doubledDelta.run === delta.run * 2 && doubledDelta.rise === delta.rise * 2) {
+              assert.equal(slopeText(play.anchor, doubled), slopeText(play.anchor, play.solution));
+            }
+          }
+        }
+      }
+
+      if (play.aim === "through" && play.through) {
+        assert.equal(onLine(play.anchor, play.solution, play.through), true);
       }
     }
   });
