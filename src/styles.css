@@ -65,13 +65,16 @@
   .area-handle-success,
   .motion-craft-running,
   .wave-node-pulse,
-  .angle-handle-success {
+  .angle-handle-success,
+  .machine-stage-enter,
+  .machine-token-enter {
     animation: none !important;
   }
 
   .forge-drag-ghost,
   .vector-drag-ghost,
-  .balance-drag-ghost {
+  .balance-drag-ghost,
+  .machine-drag-ghost {
     transition: none !important;
   }
 }
@@ -495,4 +498,44 @@
 
 .angle-handle-success {
   animation: angle-handle-success 280ms ease-out;
+}
+
+
+@keyframes machine-stage-enter {
+  0% {
+    opacity: 0;
+    transform: translateX(-8px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes machine-token-enter {
+  0% {
+    opacity: 0.45;
+    transform: scale(0.88);
+  }
+  70% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.machine-stage-enter {
+  animation: machine-stage-enter 220ms ease-out both;
+}
+
+.machine-token-enter {
+  animation: machine-token-enter 220ms ease-out both;
+}
+
+.machine-drag-ghost {
+  pointer-events: none;
+  will-change: transform;
 }

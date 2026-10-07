@@ -51,6 +51,14 @@ import {
 import { auditGrid } from "./grid/levels.ts";
 import { auditLogic } from "./logic/levels.ts";
 import { auditMachine } from "./machine/levels.ts";
+import {
+  MACHINE_PLAYS,
+  auditMachineBench,
+  machineRuleMatches,
+  reverseTrace,
+  ruleStages,
+  traceRule,
+} from "./machine/bench.ts";
 import { auditMotion } from "./motion/levels.ts";
 import {
   TRIP_PLAYS,
@@ -329,6 +337,7 @@ describe("new stations", () => {
     assert.deepEqual(auditAngle(), []);
     assert.deepEqual(auditAngleBench(), []);
     assert.deepEqual(auditMachine(), []);
+    assert.deepEqual(auditMachineBench(), []);
     assert.deepEqual(auditBalance(), []);
     assert.deepEqual(auditArea(), []);
     assert.deepEqual(auditAreaPlay(), []);
@@ -622,6 +631,32 @@ describe("new stations", () => {
           play.solution.a + play.solution.b + angleBenchValue(play.kind, play.solution),
           180,
         );
+      }
+    }
+  });
+
+
+  it("keeps direct Machine runs faithful forward and backward", () => {
+    for (const play of MACHINE_PLAYS) {
+      const trace = traceRule(play.rule, play.input);
+      assert.equal(trace.input, play.input);
+      assert.equal(trace.output, play.output);
+
+      const stages = ruleStages(play.rule, play.input);
+      assert.deepEqual(stages, trace.stages);
+      assert.ok(stages.length >= 1 && stages.length <= 2);
+      for (let index = 1; index < stages.length; index += 1) {
+        assert.equal(stages[index - 1].after, stages[index].before);
+      }
+
+      const reverse = reverseTrace(play.rule, play.output);
+      assert.ok(reverse, `machine level ${play.id} has no exact reverse trace`);
+      assert.equal(reverse.input, play.input, `machine level ${play.id} reverse missed input`);
+
+      if (play.mode === "rule") {
+        const matches = play.candidates.filter((rule) => machineRuleMatches(play, rule));
+        assert.equal(matches.length, 1, `machine level ${play.id} has ambiguous candidates`);
+        assert.deepEqual(matches[0], play.rule);
       }
     }
   });
