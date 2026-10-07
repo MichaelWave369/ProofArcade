@@ -145,7 +145,15 @@ function authPopupPlugin(): Plugin {
 // `0.0.0.0:8080` is the live-preview contract — don't change host/port.
 // The dev server starts once `src/router.tsx` and `src/routes/` exist — see
 // AGENTS.md § "First scaffold".
-export default defineConfig(({ command, isPreview }) => ({
+export default defineConfig(({ command, isPreview, mode }) => {
+  const isPages = process.env.PROOF_ARCADE_PAGES === "1" || mode === "pages";
+  const rawPagesBase = process.env.PROOF_ARCADE_PAGES_BASE ?? "/ProofArcade/";
+  const normalizedPagesBase = `/${rawPagesBase.replace(/^\/+|\/+$/g, "")}/`;
+  const appBase = isPages ? normalizedPagesBase : "/";
+  const routerBasepath = appBase === "/" ? "/" : appBase.slice(0, -1);
+
+  return {
+  base: appBase,
   server: {
     host: "0.0.0.0",
     port: 8080,
@@ -163,21 +171,44 @@ export default defineConfig(({ command, isPreview }) => ({
     authPopupPlugin(),
     // Dev-only /__app-env, read by scripts/check-auth-invariant.mjs.
     appEnvPlugin(),
-    // PWA head + ?install=1 tutorial page; runs before Start/Nitro.
-    grokPwaPlugin(),
+    // PWA head + ?install=1 tutorial page; GitHub Pages has no server
+    // middleware, so its build uses a static manifest instead.
+    ...(!isPages ? [grokPwaPlugin()] : []),
     tailwindcss(),
-    tanstackStart(),
+    tanstackStart(
+      isPages
+        ? {
+            router: { basepath: routerBasepath },
+            prerender: {
+              enabled: true,
+              autoStaticPathsDiscovery: true,
+              crawlLinks: true,
+              failOnError: true,
+            },
+            pages: [
+              { path: "/", prerender: { enabled: true, outputPath: "/index.html" } },
+              {
+                path: "/lab",
+                prerender: { enabled: true, outputPath: "/lab/index.html" },
+              },
+            ],
+          }
+        : {},
+    ),
     ...(command === "build" || isPreview
-      ? [
-          nitro({
-            preset: "vercel",
-            // Auto-registers server/middleware/* (the PWA install page +
-            // manifest + head-tag middleware). Nitro v3 defaults serverDir to
-            // false, so removing this silently unwires /?install=1 on deploys.
-            serverDir: "./server",
-          }),
-        ]
+      ? isPages
+        ? []
+        : [
+            nitro({
+              preset: "vercel",
+              // Auto-registers server/middleware/* (the PWA install page +
+              // manifest + head-tag middleware). Nitro v3 defaults serverDir to
+              // false, so removing this silently unwires /?install=1 on deploys.
+              serverDir: "./server",
+            }),
+          ]
       : []),
     viteReact(),
   ],
-}));
+  };
+});
