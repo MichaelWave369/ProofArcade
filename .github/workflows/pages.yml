@@ -41,17 +41,20 @@ jobs:
         env:
           PROOF_ARCADE_PAGES_BASE: /ProofArcade/
 
+      - name: Disable Jekyll processing
+        run: touch dist/client/.nojekyll
+
       - name: Verify Pages artifact
         run: node scripts/verify-pages-build.mjs
 
       - name: Create SPA fallback
-        run: cp .output/public/index.html .output/public/404.html
+        run: cp dist/client/index.html dist/client/404.html
 
       - name: Upload Pages artifact
         if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .output/public
+          path: dist/client
 
   deploy:
     if: github.event_name != 'pull_request'
