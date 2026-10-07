@@ -60,7 +60,8 @@
   .vector-burn-line,
   .vector-target-armed,
   .balance-op-left,
-  .balance-op-right {
+  .balance-op-right,
+  .slope-success-pulse {
     animation: none !important;
   }
 
@@ -285,4 +286,39 @@
 .balance-drag-ghost {
   pointer-events: none;
   will-change: transform;
+}
+
+
+.slope-point-hit {
+  cursor: grab;
+}
+
+.slope-point-hit:active {
+  cursor: grabbing;
+}
+
+@keyframes slope-success-pulse {
+  0% {
+    opacity: 0.72;
+    transform: scale(0.92);
+    transform-origin: center;
+  }
+  55% {
+    opacity: 1;
+    transform: scale(1.06);
+    transform-origin: center;
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    transform-origin: center;
+  }
+}
+
+.slope-success-pulse {
+  animation: slope-success-pulse 280ms ease-out;
+}
+
+.slope-measure-label {
+  pointer-events: none;
 }
