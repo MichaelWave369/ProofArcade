@@ -3,7 +3,14 @@ import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import { auditAngle } from "./angle/levels.ts";
 import { auditArea } from "./area/levels.ts";
-import { auditAreaPlay } from "./area/bench.ts";
+import {
+  AREA_PLAYS,
+  areaAmount,
+  areaBounds,
+  areaSolved,
+  auditAreaPlay,
+  snapAreaDimensions,
+} from "./area/bench.ts";
 import { auditBalance } from "./balance/levels.ts";
 import {
   BALANCE_PLAYS,
@@ -410,6 +417,40 @@ describe("new stations", () => {
       if (play.aim === "through" && play.through) {
         assert.equal(onLine(play.anchor, play.solution, play.through), true);
       }
+    }
+  });
+
+
+  it("snaps direct Area handles to legal integer dimensions without changing area truth", () => {
+    for (const play of AREA_PLAYS) {
+      const bounds = areaBounds(play);
+      const snappedSolution = snapAreaDimensions(play, play.solutionW, play.solutionH);
+
+      assert.deepEqual(
+        snappedSolution,
+        { w: play.solutionW, h: play.solutionH },
+        `area level ${play.id} solution left the integer lattice`,
+      );
+      assert.equal(
+        areaSolved(play, snappedSolution.w, snappedSolution.h),
+        true,
+        `area level ${play.id} snapped solution failed`,
+      );
+      assert.equal(
+        areaAmount(play, snappedSolution.w, snappedSolution.h),
+        play.target,
+        `area level ${play.id} changed target amount`,
+      );
+
+      const high = snapAreaDimensions(play, 999.4, 999.4);
+      assert.equal(high.w, bounds.maxW);
+      assert.equal(high.h, bounds.maxH);
+
+      const low = snapAreaDimensions(play, -999.4, -999.4);
+      assert.equal(low.w, bounds.minW);
+      assert.equal(low.h, bounds.minH);
+      assert.equal(Number.isInteger(low.w), true);
+      assert.equal(Number.isInteger(low.h), true);
     }
   });
 
