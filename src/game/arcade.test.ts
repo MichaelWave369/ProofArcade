@@ -18,7 +18,15 @@ import {
   proofsCleared,
 } from "./catalog.ts";
 import { auditFraction } from "./fraction/levels.ts";
-import { auditForge } from "./fraction/forge.ts";
+import {
+  FORGE_LEVELS,
+  applyForge,
+  auditForge,
+  beginForge,
+  forgeValueConserved,
+  sameFrac,
+  totalForgeValue,
+} from "./fraction/forge.ts";
 import { auditGrid } from "./grid/levels.ts";
 import { auditLogic } from "./logic/levels.ts";
 import { auditMachine } from "./machine/levels.ts";
@@ -277,6 +285,29 @@ describe("new stations", () => {
     assert.deepEqual(auditOrbitPlay(), []);
   });
 });
+
+
+  it("conserves exact fraction value through every Forge action and direct return", () => {
+    for (const level of FORGE_LEVELS) {
+      let state = beginForge(level);
+      const initial = totalForgeValue(state);
+      for (const action of level.script) {
+        const next = applyForge(state, action);
+        assert.ok(next, `forge level ${level.id} rejected authored action ${action.t}`);
+        assert.equal(forgeValueConserved(state, next), true, `forge level ${level.id} changed value on ${action.t}`);
+        assert.equal(sameFrac(totalForgeValue(next), initial), true, `forge level ${level.id} leaked value`);
+        state = next;
+      }
+    }
+
+    const start = beginForge(FORGE_LEVELS[0]);
+    const placed = applyForge(start, { t: "place", index: 0 });
+    assert.ok(placed);
+    const returned = applyForge(placed, { t: "return", index: 0 });
+    assert.ok(returned);
+    assert.equal(forgeValueConserved(start, returned), true);
+    assert.equal(sameFrac(totalForgeValue(start), totalForgeValue(returned)), true);
+  });
 
 describe("shipped identity", () => {
   it("brands the document and share card as Proof Arcade, not a template name", () => {
