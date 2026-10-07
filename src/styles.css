@@ -58,12 +58,15 @@
   .forge-piece-enter,
   .forge-complete-settle,
   .vector-burn-line,
-  .vector-target-armed {
+  .vector-target-armed,
+  .balance-op-left,
+  .balance-op-right {
     animation: none !important;
   }
 
   .forge-drag-ghost,
-  .vector-drag-ghost {
+  .vector-drag-ghost,
+  .balance-drag-ghost {
     transition: none !important;
   }
 }
@@ -238,6 +241,48 @@
 }
 
 .vector-drag-ghost {
+  pointer-events: none;
+  will-change: transform;
+}
+
+
+@keyframes balance-op-left {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0) scale(0.86);
+  }
+  28% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% - 88px), 48px) scale(1);
+  }
+}
+
+@keyframes balance-op-right {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0) scale(0.86);
+  }
+  28% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + 88px), 48px) scale(1);
+  }
+}
+
+.balance-op-left {
+  animation: balance-op-left 420ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.balance-op-right {
+  animation: balance-op-right 420ms cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+.balance-drag-ghost {
   pointer-events: none;
   will-change: transform;
 }
