@@ -30,6 +30,57 @@ export function specificEnergy(body: Body, mu = MU) {
   return (body.vx * body.vx + body.vy * body.vy) / 2 - mu / r;
 }
 
+export function specificAngularMomentum(body: Body) {
+  return body.x * body.vy - body.y * body.vx;
+}
+
+export type OrbitElements = {
+  energy: number;
+  angularMomentum: number;
+  eccentricity: number;
+  semiMajorAxis: number | null;
+};
+
+export function orbitElements(body: Body, mu = MU): OrbitElements {
+  const energy = specificEnergy(body, mu);
+  const angularMomentum = specificAngularMomentum(body);
+  const eccentricitySquared =
+    1 + (2 * energy * angularMomentum * angularMomentum) / (mu * mu);
+  const eccentricity = Math.sqrt(Math.max(0, eccentricitySquared));
+  const semiMajorAxis = energy < 0 ? -mu / (2 * energy) : null;
+  return { energy, angularMomentum, eccentricity, semiMajorAxis };
+}
+
+export type ConservationError = {
+  maxEnergyRelative: number;
+  maxAngularMomentumRelative: number;
+};
+
+export function conservationError(samples: readonly Body[], mu = MU): ConservationError {
+  if (samples.length === 0) {
+    return { maxEnergyRelative: 0, maxAngularMomentumRelative: 0 };
+  }
+  const referenceEnergy = specificEnergy(samples[0], mu);
+  const referenceH = specificAngularMomentum(samples[0]);
+  const energyScale = Math.max(Math.abs(referenceEnergy), 1e-9);
+  const hScale = Math.max(Math.abs(referenceH), 1e-9);
+  let maxEnergyRelative = 0;
+  let maxAngularMomentumRelative = 0;
+
+  for (const sample of samples) {
+    maxEnergyRelative = Math.max(
+      maxEnergyRelative,
+      Math.abs(specificEnergy(sample, mu) - referenceEnergy) / energyScale,
+    );
+    maxAngularMomentumRelative = Math.max(
+      maxAngularMomentumRelative,
+      Math.abs(specificAngularMomentum(sample) - referenceH) / hScale,
+    );
+  }
+
+  return { maxEnergyRelative, maxAngularMomentumRelative };
+}
+
 export function circularSpeed(radius: number, mu = MU) {
   return Math.sqrt(mu / radius);
 }
@@ -81,21 +132,14 @@ export function fly(launch: Launch, steps = STEPS, dt = DT): Body[] {
 
 export function classifyOrbit(samples: Body[]): OrbitClass {
   if (samples.length === 0) return "surface";
-  let minR = Infinity;
-  let maxR = 0;
-  let sum = 0;
+
   for (const sample of samples) {
-    const r = Math.hypot(sample.x, sample.y);
-    if (r < SURFACE) return "surface";
-    minR = Math.min(minR, r);
-    maxR = Math.max(maxR, r);
-    sum += r;
+    if (Math.hypot(sample.x, sample.y) < SURFACE) return "surface";
   }
-  const last = samples[samples.length - 1];
-  if (specificEnergy(last) >= -0.015 && maxR > 3.2) return "escape";
-  const mean = sum / samples.length;
-  const spread = mean > 0 ? (maxR - minR) / mean : 1;
-  if (spread < 0.2) return "circle";
+
+  const elements = orbitElements(samples[0]);
+  if (elements.energy >= 0 || elements.eccentricity >= 1) return "escape";
+  if (elements.eccentricity < 0.08) return "circle";
   return "ellipse";
 }
 
