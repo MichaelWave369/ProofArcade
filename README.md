@@ -4,6 +4,8 @@
 
 Proof Arcade is an experimental educational game collection built around direct manipulation, visual reasoning, and mathematical correctness. Instead of wrapping worksheets in arcade graphics, the project tries to make the underlying relationship itself playable.
 
+**Live build:** https://michaelwave369.github.io/ProofArcade/
+
 ## Current arcade
 
 Proof Arcade currently contains 18 stations:
@@ -84,7 +86,12 @@ npm test
 npm run typecheck
 npm run lint
 npm run build
+npm run build:pages
 ```
+
+`npm run build` keeps the Grok/Vercel deployment target. `npm run build:pages`
+produces a static GitHub Pages build under `.output/public` with the project
+base path `/ProofArcade/`.
 
 Pull requests run these checks in GitHub Actions.
 
