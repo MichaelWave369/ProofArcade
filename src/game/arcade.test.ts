@@ -2,6 +2,15 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
 import { auditAngle } from "./angle/levels.ts";
+import {
+  ANGLE_PLAYS,
+  angleBenchRange,
+  angleBenchSolved,
+  angleBenchValue,
+  applyAngleHandle,
+  auditAngleBench,
+  pointerAngleDegrees,
+} from "./angle/bench.ts";
 import { auditArea } from "./area/levels.ts";
 import {
   AREA_PLAYS,
@@ -318,6 +327,7 @@ describe("new stations", () => {
     assert.deepEqual(auditPrime(), []);
     assert.deepEqual(auditVector(), []);
     assert.deepEqual(auditAngle(), []);
+    assert.deepEqual(auditAngleBench(), []);
     assert.deepEqual(auditMachine(), []);
     assert.deepEqual(auditBalance(), []);
     assert.deepEqual(auditArea(), []);
@@ -575,6 +585,44 @@ describe("new stations", () => {
         Math.abs(specificEnergy(next) - specificEnergy(initial)) < 5e-4,
         `orbit level ${play.id} single-step energy changed too much`,
       );
+    }
+  });
+
+
+  it("keeps direct Angle manipulation on valid geometric relationships", () => {
+    assert.ok(Math.abs(pointerAngleDegrees(0, 0, 1, 0) - 0) < 1e-9);
+    assert.ok(Math.abs(pointerAngleDegrees(0, 0, 0, -1) - 90) < 1e-9);
+    assert.ok(Math.abs(pointerAngleDegrees(0, 0, -1, 0) - 180) < 1e-9);
+
+    for (const play of ANGLE_PLAYS) {
+      assert.equal(angleBenchSolved(play, play.solution), true, `angle level ${play.id} solution failed`);
+      assert.equal(angleBenchSolved(play, play.start), false, `angle level ${play.id} starts solved`);
+      assert.equal(
+        angleBenchValue(play.kind, play.solution),
+        play.target,
+        `angle level ${play.id} target changed`,
+      );
+
+      const range = angleBenchRange(play);
+      const low = applyAngleHandle(play, play.start, -999);
+      const high = applyAngleHandle(play, play.start, 999);
+      const lowControl = play.kind === "triangle" ? low.b : low.a;
+      const highControl = play.kind === "triangle" ? high.b : high.a;
+      assert.equal(lowControl, range.min);
+      assert.equal(highControl, range.max);
+
+      if (play.kind === "complement") {
+        assert.equal(play.solution.a + angleBenchValue(play.kind, play.solution), 90);
+      } else if (play.kind === "supplement") {
+        assert.equal(play.solution.a + angleBenchValue(play.kind, play.solution), 180);
+      } else if (play.kind === "vertical") {
+        assert.equal(play.solution.a, angleBenchValue(play.kind, play.solution));
+      } else {
+        assert.equal(
+          play.solution.a + play.solution.b + angleBenchValue(play.kind, play.solution),
+          180,
+        );
+      }
     }
   });
 
