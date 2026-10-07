@@ -64,7 +64,8 @@
   .slope-success-pulse,
   .area-handle-success,
   .motion-craft-running,
-  .wave-node-pulse {
+  .wave-node-pulse,
+  .angle-handle-success {
     animation: none !important;
   }
 
@@ -457,4 +458,41 @@
 .orbit-range {
   accent-color: var(--color-gold);
   touch-action: pan-y;
+}
+
+
+.angle-handle-hit {
+  cursor: grab;
+  touch-action: none;
+}
+
+.angle-handle-hit:active {
+  cursor: grabbing;
+}
+
+.angle-range {
+  accent-color: var(--color-gold);
+  touch-action: pan-y;
+}
+
+@keyframes angle-handle-success {
+  0% {
+    opacity: 0.72;
+    transform: scale(0.9);
+    transform-origin: center;
+  }
+  55% {
+    opacity: 1;
+    transform: scale(1.14);
+    transform-origin: center;
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    transform-origin: center;
+  }
+}
+
+.angle-handle-success {
+  animation: angle-handle-success 280ms ease-out;
 }
