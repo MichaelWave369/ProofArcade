@@ -4,6 +4,11 @@ import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import appCss from "../styles.css?url";
 
 const APP_NAME = "Proof Arcade";
+const BASE_URL = import.meta.env.BASE_URL.endsWith("/")
+  ? import.meta.env.BASE_URL
+  : `${import.meta.env.BASE_URL}/`;
+const IS_PAGES = import.meta.env.MODE === "pages";
+const assetUrl = (path: string) => `${BASE_URL}${path.replace(/^\/+/, "")}`;
 
 export const Route = createRootRoute({
   head: () => ({
@@ -15,7 +20,7 @@ export const Route = createRootRoute({
       { name: "theme-color", content: "#07080d" },
     ],
     links: [
-      { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+      { rel: "icon", type: "image/svg+xml", href: assetUrl("favicon.svg") },
       { rel: "stylesheet", href: appCss },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
@@ -23,8 +28,14 @@ export const Route = createRootRoute({
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Syne:wght@500;700;800&display=swap",
       },
-      { rel: "manifest", href: "/__grok/manifest.webmanifest" },
-      { rel: "apple-touch-icon", href: "/__grok/icon-180.png" },
+      {
+        rel: "manifest",
+        href: IS_PAGES ? assetUrl("manifest.webmanifest") : "/__grok/manifest.webmanifest",
+      },
+      {
+        rel: "apple-touch-icon",
+        href: IS_PAGES ? assetUrl("__grok/icon-180.png") : "/__grok/icon-180.png",
+      },
     ],
   }),
   component: () => (
