@@ -193,8 +193,11 @@ export const ORBIT_PLAYS: OrbitPlay[] = [
 
 export type OrbitJudgement = { ok: boolean; kind: OrbitClass; detail: string };
 
-export function judgeOrbit(play: OrbitPlay, launch: Launch): OrbitJudgement {
-  const kind = classifyOrbit(fly(launch));
+export function judgeOrbitSamples(
+  play: OrbitPlay,
+  samples: ReturnType<typeof fly>,
+): OrbitJudgement {
+  const kind = classifyOrbit(samples);
   if (play.aim === "aloft") {
     const ok = kind !== "surface";
     return { ok, kind, detail: ok ? `Aloft. The path is a ${kind}.` : "That launch hits the mass." };
@@ -205,6 +208,10 @@ export function judgeOrbit(play: OrbitPlay, launch: Launch): OrbitJudgement {
   }
   const ok = kind === play.aim;
   return { ok, kind, detail: ok ? `The path is a ${kind}.` : `The path is a ${kind}, not a ${play.aim}.` };
+}
+
+export function judgeOrbit(play: OrbitPlay, launch: Launch): OrbitJudgement {
+  return judgeOrbitSamples(play, fly(launch));
 }
 
 export function auditOrbitPlay(): string[] {
