@@ -389,7 +389,7 @@ function directClear(grid: Grid, a: Pos, b: Pos, chain: number): Beat | null {
 }
 
 function settle(grid: Grid, rng: Rng, kindCount: number) {
-  let cells = cloneGrid(grid);
+  const cells = cloneGrid(grid);
   for (let pass = 0; pass < 12; pass++) {
     if (findGroups(cells).length === 0) break;
     const groups = findGroups(cells);

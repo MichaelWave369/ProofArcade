@@ -1,1 +1,0 @@
-import{r as e}from"./index-DR9GT3VN.js";import{t}from"./instrument-lab-BzryW1Qu.js";var n=e();function r(){return(0,n.jsx)(t,{})}export{r as component};
