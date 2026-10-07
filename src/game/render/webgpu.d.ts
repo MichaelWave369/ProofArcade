@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-empty-object-type -- Opaque WebGPU handle shims intentionally have no members. */
 /** Minimal WebGPU surface used by the instrument lab. The installed TypeScript DOM lib does not ship these yet. */
 
 interface GPU {
