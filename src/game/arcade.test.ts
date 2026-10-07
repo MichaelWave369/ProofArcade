@@ -39,7 +39,13 @@ import { auditPrime } from "./prime/levels.ts";
 import { auditSlope } from "./slope/levels.ts";
 import { auditLine } from "./slope/line.ts";
 import { auditVector } from "./vector/levels.ts";
-import { auditDrift } from "./vector/drift.ts";
+import {
+  DRIFT_LEVELS,
+  applyDrift,
+  auditDrift,
+  beginDrift,
+  sameV,
+} from "./vector/drift.ts";
 import { auditWave } from "./waves/levels.ts";
 import { auditWavePlay } from "./waves/play.ts";
 import {
@@ -307,6 +313,23 @@ describe("new stations", () => {
     assert.ok(returned);
     assert.equal(forgeValueConserved(start, returned), true);
     assert.equal(sameFrac(totalForgeValue(start), totalForgeValue(returned)), true);
+  });
+
+
+  it("applies direct Vector Drift cards atomically without mutating prior state", () => {
+    for (const level of DRIFT_LEVELS) {
+      const start = beginDrift(level);
+      const before = structuredClone(start);
+      for (let index = 0; index < level.cards.length; index += 1) {
+        const next = applyDrift(level, start, index);
+        if (!next) continue;
+        assert.deepEqual(start, before, `vector level ${level.id} mutated the prior state`);
+        assert.equal(next.used[index], true, `vector level ${level.id} did not consume card ${index}`);
+        assert.equal(next.turn, start.turn + 1);
+        assert.equal(next.trail.length, start.trail.length + 1);
+        assert.equal(sameV(next.applied, level.cards[index]), true);
+      }
+    }
   });
 
 describe("shipped identity", () => {
