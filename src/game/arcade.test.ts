@@ -76,7 +76,13 @@ import {
   sameV,
 } from "./vector/drift.ts";
 import { auditWave } from "./waves/levels.ts";
-import { auditWavePlay } from "./waves/play.ts";
+import {
+  WAVE_PLAYS,
+  auditWavePlay,
+  interferenceMetrics,
+  normalizedWaveTime,
+  standingNodes,
+} from "./waves/play.ts";
 import {
   emptyProgress,
   loadProgress,
@@ -501,6 +507,33 @@ describe("new stations", () => {
     }
 
     assert.ok(validTripPairs(TRIP_PLAYS[0]).length > 1, "open Motion level should accept multiple factor pairs");
+  });
+
+
+  it("keeps Wave Lab diagnostics tied to the actual wave model", () => {
+    assert.ok(Math.abs(normalizedWaveTime(Math.PI * 2 + 0.4) - 0.4) < 1e-9);
+
+    const cancel = WAVE_PLAYS.find((play) => play.kind === "cancel");
+    assert.ok(cancel);
+    const cancelMetrics = interferenceMetrics([...cancel.fixed, ...cancel.solution], 0.7);
+    assert.ok(cancelMetrics.sumRms < 0.01, `cancel RMS ${cancelMetrics.sumRms}`);
+
+    const standing = WAVE_PLAYS.find((play) => play.kind === "standing");
+    assert.ok(standing);
+    const standingWaves = [...standing.fixed, ...standing.solution];
+    const nodes = standingNodes(standingWaves);
+    assert.ok(nodes.length >= 2, "standing solution should expose fixed nodes");
+    for (const x of nodes) {
+      for (const time of [0, 0.7, 1.4]) {
+        const metrics = interferenceMetrics(standingWaves, time, 64);
+        assert.ok(Number.isFinite(metrics.ratio));
+        const displacement = standingWaves.reduce((sum, wave) => {
+          const dir = wave.dir === -1 ? -1 : 1;
+          return sum + wave.amp * Math.sin(wave.freq * x * Math.PI * 2 + wave.phase + dir * time);
+        }, 0);
+        assert.ok(Math.abs(displacement) < 0.02, `node drifted at x=${x}, t=${time}: ${displacement}`);
+      }
+    }
   });
 
 describe("shipped identity", () => {

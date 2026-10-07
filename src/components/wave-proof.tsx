@@ -8,7 +8,16 @@ import { curveY, createPool, stepPool, type Wave } from "@/game/render/field";
 import { loadFidelity, present } from "@/game/render/quality";
 import { openLabSurface, type LabSurface } from "@/game/render/surface";
 import { WAVE_LEVELS, auditWave, type WavePrompt, type WaveScene } from "@/game/waves/levels";
-import { WAVE_PLAYS, freqFromLength, judgeWave, waveLength, type WavePlay } from "@/game/waves/play";
+import {
+  WAVE_PLAYS,
+  freqFromLength,
+  interferenceMetrics,
+  judgeWave,
+  normalizedWaveTime,
+  standingNodes,
+  waveLength,
+  type WavePlay,
+} from "@/game/waves/play";
 
 function bake(wave: Wave, time: number): Wave {
   const dir = wave.dir === -1 ? -1 : 1;
@@ -70,6 +79,57 @@ function Ghost({ waves, time }: { waves: Wave[]; time: number }) {
   );
 }
 
+
+function WaveOverlay({
+  waves,
+  time,
+  standing,
+}: {
+  waves: Wave[];
+  time: number;
+  standing: boolean;
+}) {
+  const nodes = standing ? standingNodes(waves) : [];
+  const metrics = interferenceMetrics(waves, time);
+
+  return (
+    <>
+      <svg
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+        className="pointer-events-none absolute inset-0 h-full w-full"
+        aria-hidden="true"
+      >
+        {nodes.map((node) => (
+          <g key={node} className="wave-node-pulse text-mint">
+            <line
+              x1={node * 100}
+              y1="7"
+              x2={node * 100}
+              y2="93"
+              stroke="currentColor"
+              strokeWidth="0.45"
+              strokeDasharray="1.1 1.4"
+            />
+            <circle cx={node * 100} cy="50" r="1.4" fill="currentColor" />
+          </g>
+        ))}
+      </svg>
+      <div className="pointer-events-none absolute bottom-2 left-2 rounded-lg border border-line/80 bg-ink/80 px-2 py-1 font-mono text-[10px] text-mist backdrop-blur-sm">
+        <span className="text-cream">sum RMS {metrics.sumRms.toFixed(3)}</span>
+        <span className="mx-2 text-line">·</span>
+        components {metrics.componentRms.toFixed(3)}
+        {standing && nodes.length > 0 ? (
+          <>
+            <span className="mx-2 text-line">·</span>
+            <span className="text-mint">{nodes.length} fixed nodes</span>
+          </>
+        ) : null}
+      </div>
+    </>
+  );
+}
+
 function Slider({
   label,
   min,
@@ -100,7 +160,7 @@ function Slider({
         value={value}
         disabled={disabled}
         onChange={(event) => onChange(Number(event.target.value))}
-        className="h-11 min-w-0 flex-1 accent-gold"
+        className="wave-range h-11 min-w-0 flex-1"
       />
       <span className="w-14 text-right font-mono text-cream">{value.toFixed(digits)}</span>
     </label>
@@ -130,6 +190,9 @@ function WaveBench({ active, onExit, onQuestions }: { active: boolean; onExit?: 
   const [clock, setClock] = useState(0);
   const [run, setRun] = useState(0);
   const [locked, setLocked] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [backend, setBackend] = useState("pending");
+  const pausedRef = useRef(false);
   const holdRef = useRef<number | null>(null);
   const level = WAVE_PLAYS[levelId - 1] ?? WAVE_PLAYS[0];
   playRef.current = level;
@@ -139,6 +202,8 @@ function WaveBench({ active, onExit, onQuestions }: { active: boolean; onExit?: 
     wavesRef.current = next;
     setWaves(next);
     setLocked(false);
+    pausedRef.current = false;
+    setPaused(false);
     timeRef.current = 0;
     setClock(0);
   }, [level]);
@@ -151,7 +216,7 @@ function WaveBench({ active, onExit, onQuestions }: { active: boolean; onExit?: 
     let surface: LabSurface | null = null;
     const caps = detectCapabilities();
     const view = present(loadFidelity(), caps);
-    const pool = createPool(Math.min(view.particles, 64));
+    const pool = createPool(Math.min(view.particles, 96));
     let last = performance.now();
     const resize = () => {
       if (!surface) return;
@@ -167,20 +232,25 @@ function WaveBench({ active, onExit, onQuestions }: { active: boolean; onExit?: 
       }
       const dt = Math.min(0.05, Math.max(0, (now - last) / 1000));
       last = now;
-      if (!caps.reducedMotion) timeRef.current += dt;
+      if (!caps.reducedMotion && !pausedRef.current) timeRef.current += dt;
       const time = timeRef.current;
       const shown = [...playRef.current.fixed, ...wavesRef.current].slice(0, 2).map((wave) => bake(wave, time));
-      if (caps.reducedMotion) {
+      if (caps.reducedMotion || pausedRef.current) {
         for (const particle of pool) {
           particle.y = curveY(particle.x, shown, 0);
           particle.vy = 0;
-          particle.trail = [];
+          if (caps.reducedMotion) particle.trail = [];
         }
       } else {
         stepPool(pool, dt, shown, 0);
       }
       surface.draw({ time: 0, waves: shown, particles: pool, reducedMotion: caps.reducedMotion });
-      if (!caps.reducedMotion && Math.floor(now / 80) !== Math.floor((now - dt * 1000) / 80)) setClock(time);
+      if (
+        Math.floor(now / 80) !== Math.floor((now - dt * 1000) / 80) ||
+        pausedRef.current
+      ) {
+        setClock(time);
+      }
     };
     void openLabSurface(host, view.backend).then((opened) => {
       if (cancelled) {
@@ -188,6 +258,7 @@ function WaveBench({ active, onExit, onQuestions }: { active: boolean; onExit?: 
         return;
       }
       surface = opened;
+      setBackend(opened.backend);
       resize();
       observer.observe(host);
       raf = requestAnimationFrame(loop);
@@ -201,6 +272,18 @@ function WaveBench({ active, onExit, onQuestions }: { active: boolean; onExit?: 
     };
   }, [active]);
 
+  function setPause(next: boolean) {
+    pausedRef.current = next;
+    setPaused(next);
+  }
+
+  function scrubTime(value: number) {
+    const next = normalizedWaveTime(value);
+    timeRef.current = next;
+    setClock(next);
+    setPause(true);
+  }
+
   function tune(index: number, patch: Partial<Wave>) {
     const next = wavesRef.current.map((wave, waveIndex) => (waveIndex === index ? { ...wave, ...patch } : { ...wave }));
     wavesRef.current = next;
@@ -213,6 +296,8 @@ function WaveBench({ active, onExit, onQuestions }: { active: boolean; onExit?: 
 
   const judgement = judgeWave(level, waves);
   const ghost = level.kind === "match" || level.kind === "identify";
+  const rawFieldWaves = [...level.fixed, ...waves].slice(0, 2);
+  const phaseClock = normalizedWaveTime(clock);
 
   function clearHold() {
     if (holdRef.current !== null) window.clearTimeout(holdRef.current);
@@ -239,10 +324,56 @@ function WaveBench({ active, onExit, onQuestions }: { active: boolean; onExit?: 
       <div className="relative mt-3 h-52 overflow-hidden rounded-2xl border border-line sm:h-64">
         <div ref={hostRef} className="absolute inset-0" />
         {ghost ? <Ghost waves={level.solution} time={clock} /> : null}
+        <WaveOverlay
+          waves={rawFieldWaves}
+          time={clock}
+          standing={level.kind === "standing"}
+        />
         {level.kind === "cancel" ? <div className="pointer-events-none absolute inset-x-0 top-1/2 border-t border-dashed border-cream/40" /> : null}
+        <div className="pointer-events-none absolute right-2 top-2 rounded-full border border-line/80 bg-ink/80 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-mist backdrop-blur-sm">
+          {backend}
+        </div>
       </div>
-      <p className="mt-2 font-mono text-xs text-mist">Mint is the first wave. Gold is the second. Cream is their sum. The picture uses the same state on every drawing path.</p>
+      <p className="mt-2 font-mono text-xs text-mist">Mint is the first wave. Gold is the second. Cream is their sum. Medium markers stay at fixed horizontal positions and move only with local displacement.</p>
       {level.fixed.length > 0 ? <p className="mt-1 text-xs text-mist">A wave on this bench is fixed. You edit only the open controls.</p> : null}
+      <div className="mt-3 rounded-xl border border-line bg-panel px-3 py-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setPause(!paused)}
+            className="min-h-10 rounded-full border border-line px-4 text-sm text-cream"
+          >
+            {paused ? "Play" : "Pause"}
+          </button>
+          <button
+            type="button"
+            onClick={() => scrubTime(0)}
+            className="min-h-10 rounded-full border border-line px-4 text-sm text-cream"
+          >
+            Zero clock
+          </button>
+          <p className="font-mono text-xs text-mist">
+            phase time <span className="text-cream">{phaseClock.toFixed(2)}</span> rad
+          </p>
+        </div>
+        <label className="mt-2 flex items-center gap-3">
+          <span className="w-20 shrink-0 font-mono text-[10px] uppercase tracking-widest text-mist">
+            Time scrub
+          </span>
+          <input
+            type="range"
+            min={0}
+            max={Math.PI * 2}
+            step={0.02}
+            value={phaseClock}
+            onChange={(event) => scrubTime(Number(event.currentTarget.value))}
+            className="wave-time-range h-10 min-w-0 flex-1"
+          />
+        </label>
+        <p className="mt-1 text-[11px] text-mist">
+          Scrubbing pauses the normalized phase clock so interference and standing nodes can be inspected frame by frame.
+        </p>
+      </div>
       <div className="mt-3 grid gap-4 sm:grid-cols-2">
         {waves.map((wave, index) => {
           const lock = level.locks[index];

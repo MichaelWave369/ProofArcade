@@ -63,7 +63,8 @@
   .balance-op-right,
   .slope-success-pulse,
   .area-handle-success,
-  .motion-craft-running {
+  .motion-craft-running,
+  .wave-node-pulse {
     animation: none !important;
   }
 
@@ -425,4 +426,29 @@
 
 .motion-craft-running {
   animation: motion-craft-running 360ms ease-in-out infinite;
+}
+
+
+.wave-range {
+  accent-color: var(--color-gold);
+  touch-action: pan-y;
+}
+
+.wave-time-range {
+  accent-color: var(--color-mint);
+  touch-action: pan-y;
+}
+
+@keyframes wave-node-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+.wave-node-pulse {
+  animation: wave-node-pulse 900ms ease-in-out infinite;
 }

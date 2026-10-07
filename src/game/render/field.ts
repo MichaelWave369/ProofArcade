@@ -13,15 +13,20 @@ export type FieldParticle = {
   trail: number[];
 };
 
-export const TRAIL_SAMPLES = 12;
+export const TRAIL_SAMPLES = 24;
+
+export function waveDisplacement(x: number, waves: readonly Wave[], time: number): number {
+  let sum = 0;
+  for (const wave of waves) {
+    const direction = wave.dir === -1 ? -1 : 1;
+    sum += wave.amp * Math.sin(wave.freq * x * Math.PI * 2 + wave.phase + direction * time);
+  }
+  return sum;
+}
 
 /** Vertical position of the summed waves. Matches the instrument shaders. */
 export function curveY(x: number, waves: readonly Wave[], time: number): number {
-  let sum = 0;
-  for (const wave of waves) {
-    sum += wave.amp * Math.sin(wave.freq * x * Math.PI * 2 + wave.phase + time);
-  }
-  return 0.5 + sum * 0.42;
+  return 0.5 + waveDisplacement(x, waves, time) * 0.42;
 }
 
 export function createPool(count: number): FieldParticle[] {
@@ -33,7 +38,7 @@ export function createPool(count: number): FieldParticle[] {
   return pool;
 }
 
-/** Particles chase the real curve and leave a trail of where they have been. */
+/** Medium markers stay at a fixed x and oscillate with local displacement. */
 export function stepPool(pool: FieldParticle[], dt: number, waves: readonly Wave[], time: number) {
   const h = Math.min(Math.max(dt, 0), 0.05);
   if (h === 0) return;
@@ -42,8 +47,6 @@ export function stepPool(pool: FieldParticle[], dt: number, waves: readonly Wave
     const pull = (target - particle.y) * 14 - particle.vy * 5;
     particle.vy += pull * h;
     particle.y += particle.vy * h;
-    particle.x += 0.07 * h;
-    if (particle.x > 1) particle.x -= 1;
     particle.trail.push(particle.x, particle.y);
     if (particle.trail.length > TRAIL_SAMPLES) particle.trail.splice(0, particle.trail.length - TRAIL_SAMPLES);
   }

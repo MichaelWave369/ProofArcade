@@ -1,4 +1,4 @@
-import { curveY, type Wave } from "../render/field.ts";
+import { curveY, waveDisplacement, type Wave } from "../render/field.ts";
 
 export type WaveKind = "match" | "cancel" | "construct" | "standing" | "identify";
 
@@ -23,6 +23,67 @@ export function waveLength(freq: number) {
 export function freqFromLength(length: number) {
   if (length === 0) return 1;
   return 1 / length;
+}
+
+export type InterferenceMetrics = {
+  sumRms: number;
+  componentRms: number;
+  ratio: number;
+};
+
+export function normalizedWaveTime(time: number) {
+  const tau = Math.PI * 2;
+  const wrapped = time % tau;
+  return wrapped < 0 ? wrapped + tau : wrapped;
+}
+
+export function interferenceMetrics(
+  waves: readonly Wave[],
+  time: number,
+  samples = 96,
+): InterferenceMetrics {
+  const count = Math.max(8, Math.floor(samples));
+  let sumSq = 0;
+  let componentSq = 0;
+
+  for (let i = 0; i < count; i += 1) {
+    const x = count === 1 ? 0 : i / (count - 1);
+    const total = waveDisplacement(x, waves, time);
+    sumSq += total * total;
+    for (const wave of waves) {
+      const single = waveDisplacement(x, [wave], time);
+      componentSq += single * single;
+    }
+  }
+
+  const sumRms = Math.sqrt(sumSq / count);
+  const componentRms = Math.sqrt(componentSq / count);
+  return {
+    sumRms,
+    componentRms,
+    ratio: componentRms === 0 ? 0 : sumRms / componentRms,
+  };
+}
+
+export function standingNodes(waves: readonly Wave[]): number[] {
+  if (waves.length !== 2) return [];
+  const [a, b] = waves;
+  if (!a || !b) return [];
+  if (dirOf(a) === dirOf(b)) return [];
+  if (Math.abs(a.amp - b.amp) > 0.04) return [];
+  if (Math.abs(a.freq - b.freq) > 0.05) return [];
+  if (angDiff(a.phase, b.phase) > 0.3) return [];
+
+  const freq = (a.freq + b.freq) / 2;
+  const phase = (a.phase + b.phase) / 2;
+  const nodes: number[] = [];
+  for (let n = -32; n <= 64; n += 1) {
+    const x = (n * Math.PI - phase) / (freq * Math.PI * 2);
+    if (x < -1e-9 || x > 1 + 1e-9) continue;
+    const clamped = Math.max(0, Math.min(1, x));
+    if (!nodes.some((node) => Math.abs(node - clamped) < 1e-6)) nodes.push(clamped);
+  }
+  return nodes.sort((left, right) => left - right);
 }
 
 function w(amp: number, freq: number, phase: number, dir: 1 | -1 = 1): Wave {
