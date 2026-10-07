@@ -48,7 +48,20 @@ import {
   sameFrac,
   totalForgeValue,
 } from "./fraction/forge.ts";
-import { auditGrid } from "./grid/levels.ts";
+import { auditGrid, type Pt } from "./grid/levels.ts";
+import {
+  GRID_MAX,
+  GRID_MIN,
+  GRID_PLAYS,
+  auditGridBench,
+  distanceExpression,
+  exactDistance,
+  gridBenchSolved,
+  gridDelta,
+  sameGridPoint,
+  snapGridPoint,
+  squaredDistance,
+} from "./grid/bench.ts";
 import { auditLogic } from "./logic/levels.ts";
 import { auditMachine } from "./machine/levels.ts";
 import {
@@ -344,6 +357,7 @@ describe("new stations", () => {
     assert.deepEqual(auditMotion(), []);
     assert.deepEqual(auditTrip(), []);
     assert.deepEqual(auditGrid(), []);
+    assert.deepEqual(auditGridBench(), []);
     assert.deepEqual(auditOrbit(), []);
     assert.deepEqual(auditDrift(), []);
     assert.deepEqual(auditScale(), []);
@@ -658,6 +672,56 @@ describe("new stations", () => {
         assert.equal(matches.length, 1, `machine level ${play.id} has ambiguous candidates`);
         assert.deepEqual(matches[0], play.rule);
       }
+    }
+  });
+
+
+  it("keeps direct Grid manipulation exact on the integer lattice", () => {
+    assert.deepEqual(snapGridPoint(2.49, -1.51), [2, -2]);
+    assert.deepEqual(snapGridPoint(999, -999), [GRID_MAX, GRID_MIN]);
+
+    for (const play of GRID_PLAYS) {
+      assert.equal(gridBenchSolved(play, play.start), false, `grid level ${play.id} starts solved`);
+
+      if (play.kind === "mid") {
+        assert.equal(gridBenchSolved(play, play.target), true);
+        const left = gridDelta(play.a, play.target);
+        const right = gridDelta(play.target, play.b);
+        assert.deepEqual(left, right, `grid midpoint level ${play.id} does not bisect the vector`);
+      } else {
+        assert.equal(gridBenchSolved(play, play.authoredB), true);
+        assert.equal(exactDistance(play.a, play.authoredB), play.targetDistance);
+        assert.equal(
+          squaredDistance(play.a, play.authoredB),
+          play.targetDistance * play.targetDistance,
+        );
+
+        const relation = distanceExpression(play.a, play.authoredB);
+        assert.equal(
+          relation.run * relation.run + relation.rise * relation.rise,
+          relation.square,
+        );
+        assert.equal(relation.exact, play.targetDistance);
+
+        const symmetric: Pt = [
+          play.a[0] - (play.authoredB[0] - play.a[0]),
+          play.a[1] - (play.authoredB[1] - play.a[1]),
+        ];
+        if (
+          symmetric[0] >= GRID_MIN &&
+          symmetric[0] <= GRID_MAX &&
+          symmetric[1] >= GRID_MIN &&
+          symmetric[1] <= GRID_MAX
+        ) {
+          assert.equal(
+            squaredDistance(play.a, symmetric),
+            play.targetDistance * play.targetDistance,
+          );
+          assert.equal(gridBenchSolved(play, symmetric), true);
+        }
+      }
+
+      assert.equal(sameGridPoint(snapGridPoint(play.start[0], play.start[1]), play.start), true);
     }
   });
 
