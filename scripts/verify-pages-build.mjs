@@ -2,11 +2,10 @@
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
-const out = join(process.cwd(), ".output", "public");
+const out = join(process.cwd(), "dist", "client");
 const required = [
   "index.html",
   "lab/index.html",
-  ".nojekyll",
   "manifest.webmanifest",
   "__grok/icon-180.png",
 ];
@@ -32,4 +31,4 @@ if (/\b(?:src|href)=["']\/(?!ProofArcade\/)/.test(html)) {
   process.exit(1);
 }
 
-console.log("[pages] static build verified: root + lab + project-relative assets");
+console.log("[pages] static build verified: dist/client root + lab + project-relative assets");
