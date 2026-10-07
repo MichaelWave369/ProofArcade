@@ -67,7 +67,8 @@
   .wave-node-pulse,
   .angle-handle-success,
   .machine-stage-enter,
-  .machine-token-enter {
+  .machine-token-enter,
+  .grid-handle-success {
     animation: none !important;
   }
 
@@ -538,4 +539,36 @@
 .machine-drag-ghost {
   pointer-events: none;
   will-change: transform;
+}
+
+
+.grid-handle-hit {
+  cursor: grab;
+  touch-action: none;
+}
+
+.grid-handle-hit:active {
+  cursor: grabbing;
+}
+
+@keyframes grid-handle-success {
+  0% {
+    opacity: 0.72;
+    transform: scale(0.9);
+    transform-origin: center;
+  }
+  55% {
+    opacity: 1;
+    transform: scale(1.15);
+    transform-origin: center;
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    transform-origin: center;
+  }
+}
+
+.grid-handle-success {
+  animation: grid-handle-success 280ms ease-out;
 }
