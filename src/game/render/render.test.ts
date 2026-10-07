@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { performanceTier, readCapabilities } from "./capabilities.ts";
-import { curveY, createPool, stepPool } from "./field.ts";
+import { curveY, createPool, stepPool, waveDisplacement } from "./field.ts";
 import { createClock, createSpring, dampingRatio, kick, stepSpring } from "./motion.ts";
 import {
   FIDELITY_CHOICES,
@@ -217,8 +217,21 @@ describe("wave field", () => {
     const origin = pool[0].y;
     stepPool(pool, 1 / 60, [{ amp: 1, freq: 1, phase: Math.PI / 2 }], 0);
     assert.ok(pool[0].y < origin);
-    assert.ok(pool[0].x > 0.5);
+    assert.equal(pool[0].x, 0.5, "medium marker should not drift with the wave");
     assert.ok(pool[0].trail.length >= 2);
+    assert.ok(
+      Math.abs(
+        waveDisplacement(
+          0.25,
+          [
+            { amp: 0.4, freq: 2, phase: 0, dir: 1 },
+            { amp: 0.4, freq: 2, phase: 0, dir: -1 },
+          ],
+          Math.PI / 2,
+        ),
+      ) < 1e-9,
+      "opposite traveling waves share fixed standing-wave nodes",
+    );
     const held = pool[0].y;
     stepPool(pool, 0, waves, 0);
     stepPool(pool, -0.5, waves, 0);
