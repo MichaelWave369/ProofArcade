@@ -76,6 +76,24 @@ export const AREA_PLAYS: AreaPlay[] = [
   play(16, "Triangle of 8", "tri", "The dashed box is the rectangle. The gold is half of it.", 8, 8, 2, 2, 8, 4, 4),
 ];
 
+export function areaBounds(play: AreaPlay) {
+  const cut = play.aim === "cut";
+  return {
+    minW: cut ? 0 : 1,
+    minH: cut ? 0 : 1,
+    maxW: cut ? play.blockW : play.maxW,
+    maxH: cut ? play.blockH : play.maxH,
+  };
+}
+
+export function snapAreaDimensions(play: AreaPlay, w: number, h: number) {
+  const bounds = areaBounds(play);
+  return {
+    w: Math.max(bounds.minW, Math.min(bounds.maxW, Math.round(w))),
+    h: Math.max(bounds.minH, Math.min(bounds.maxH, Math.round(h))),
+  };
+}
+
 export function areaAmount(play: AreaPlay, w: number, h: number) {
   if (play.aim === "cut") return play.blockW * play.blockH - w * h;
   if (play.aim === "tri") return (w * h) / 2;
