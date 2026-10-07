@@ -94,6 +94,16 @@ export function clampPoint(point: V, span: number): V {
   };
 }
 
+export function snapPoint(point: V, span: number): V {
+  return clampPoint(
+    {
+      x: Math.round(point.x),
+      y: Math.round(point.y),
+    },
+    span,
+  );
+}
+
 export function lineSolved(play: LinePlay, point: V) {
   if (!inSpan(point, play.span)) return false;
   if (samePoint(point, play.anchor)) return false;
