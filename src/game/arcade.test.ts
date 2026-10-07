@@ -54,7 +54,15 @@ import {
 } from "./motion/trip.ts";
 import { auditOdds } from "./odds/levels.ts";
 import { auditOrbit } from "./orbit/levels.ts";
-import { auditOrbitPlay } from "./orbit/plays.ts";
+import { ORBIT_PLAYS, auditOrbitPlay } from "./orbit/plays.ts";
+import {
+  conservationError,
+  fly,
+  orbitElements,
+  specificAngularMomentum,
+  specificEnergy,
+  stepBody,
+} from "./orbit/sim.ts";
 import { auditPrime } from "./prime/levels.ts";
 import { auditSlope } from "./slope/levels.ts";
 import {
@@ -533,6 +541,40 @@ describe("new stations", () => {
         }, 0);
         assert.ok(Math.abs(displacement) < 0.02, `node drifted at x=${x}, t=${time}: ${displacement}`);
       }
+    }
+  });
+
+
+  it("keeps Orbit integration conservative enough for the live instrument", () => {
+    for (const play of ORBIT_PLAYS) {
+      const samples = fly(play.solution);
+      const drift = conservationError(samples);
+
+      assert.ok(
+        drift.maxEnergyRelative < 0.01,
+        `orbit level ${play.id} energy drift ${drift.maxEnergyRelative}`,
+      );
+      assert.ok(
+        drift.maxAngularMomentumRelative < 1e-6,
+        `orbit level ${play.id} angular momentum drift ${drift.maxAngularMomentumRelative}`,
+      );
+
+      const initial = samples[0];
+      assert.ok(initial);
+      const elements = orbitElements(initial);
+      assert.equal(Number.isFinite(elements.energy), true);
+      assert.equal(Number.isFinite(elements.angularMomentum), true);
+      assert.equal(Number.isFinite(elements.eccentricity), true);
+
+      const next = stepBody(initial);
+      assert.ok(
+        Math.abs(specificAngularMomentum(next) - specificAngularMomentum(initial)) < 1e-8,
+        `orbit level ${play.id} single-step angular momentum changed`,
+      );
+      assert.ok(
+        Math.abs(specificEnergy(next) - specificEnergy(initial)) < 5e-4,
+        `orbit level ${play.id} single-step energy changed too much`,
+      );
     }
   });
 
