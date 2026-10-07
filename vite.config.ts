@@ -146,7 +146,7 @@ function authPopupPlugin(): Plugin {
 // The dev server starts once `src/router.tsx` and `src/routes/` exist — see
 // AGENTS.md § "First scaffold".
 export default defineConfig(({ command, isPreview, mode }) => {
-  const isPages = mode === "pages";
+  const isPages = process.env.PROOF_ARCADE_PAGES === "1" || mode === "pages";
   const rawPagesBase = process.env.PROOF_ARCADE_PAGES_BASE ?? "/ProofArcade/";
   const normalizedPagesBase = `/${rawPagesBase.replace(/^\/+|\/+$/g, "")}/`;
   const appBase = isPages ? normalizedPagesBase : "/";
