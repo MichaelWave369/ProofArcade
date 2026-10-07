@@ -1,0 +1,154 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #07080d;
+  --color-panel: #12141c;
+  --color-panel-2: #1b1e28;
+  --color-cream: #f4efe4;
+  --color-mist: #a39c90;
+  --color-gold: #e4b15a;
+  --color-gold-soft: #f3d7a1;
+  --color-line: #2e2a22;
+  --color-mint: #8fd0b0;
+  --color-danger: #e07a6a;
+  --font-sans: "Syne", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  html,
+  body {
+    height: 100%;
+    background: var(--color-ink);
+    color: var(--color-cream);
+    font-family: var(--font-sans);
+    margin: 0;
+  }
+
+  body {
+    overflow: hidden;
+  }
+
+  ::selection {
+    background: var(--color-gold);
+    color: var(--color-ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-safe {
+    transition: none !important;
+  }
+
+  .score-float,
+  .lattice-shake,
+  .cabinet-bob,
+  .cabinet-drift,
+  .cabinet-pulse {
+    animation: none !important;
+  }
+}
+
+@keyframes score-float {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-18px);
+  }
+}
+
+.score-float {
+  animation: score-float 720ms ease-out forwards;
+}
+
+@keyframes lattice-shake {
+  25% {
+    transform: translateX(-3px);
+  }
+  75% {
+    transform: translateX(3px);
+  }
+}
+
+.lattice-shake {
+  animation: lattice-shake 180ms linear;
+}
+
+.lab-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in srgb, var(--color-line) 70%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in srgb, var(--color-line) 70%, transparent) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+@keyframes cabinet-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes cabinet-drift {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes cabinet-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.cabinet-bob {
+  animation: cabinet-bob 2.4s ease-in-out infinite;
+}
+
+.cabinet-drift {
+  animation: cabinet-drift 2.8s ease-in-out infinite;
+}
+
+.cabinet-pulse {
+  animation: cabinet-pulse 1.6s ease-in-out infinite;
+}
+
+@media (max-height: 520px) {
+  .lobby-kicker,
+  .lobby-motto {
+    display: none;
+  }
+
+  .lobby-header {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+
+  .lobby-title {
+    font-size: 1.75rem;
+    line-height: 1.1;
+  }
+}

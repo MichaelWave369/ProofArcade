@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Proof Arcade",
+      "hasCanvas": false,
+      "bodyTextLen": 3255,
+      "bodyTextHash": "702e7775e796faac6ca6fe2e177fe4bef78dc1925342426fd1aa1502df30072d",
+      "bodyTextPrefix": "LABORATORY FLOOR Proof Arcade 18 stations · 0 proofs cleared Sam",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Proof Arcade",
+      "hasCanvas": false,
+      "bodyTextLen": 3255,
+      "bodyTextHash": "702e7775e796faac6ca6fe2e177fe4bef78dc1925342426fd1aa1502df30072d",
+      "bodyTextPrefix": "LABORATORY FLOOR Proof Arcade 18 stations · 0 proofs cleared Sam",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-preview.json"
+}

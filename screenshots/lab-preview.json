@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/lab",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Proof Arcade",
+      "hasCanvas": true,
+      "bodyTextLen": 405,
+      "bodyTextHash": "a4489b7ad071c8cf934183abf5f5f5e2a0ddf426f0d7ac17d0025c72b42cc863",
+      "bodyTextPrefix": "INSTRUMENT LAB Wave bench Floor This screen is using page drawin",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/lab-preview.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Proof Arcade",
+      "hasCanvas": true,
+      "bodyTextLen": 405,
+      "bodyTextHash": "a4489b7ad071c8cf934183abf5f5f5e2a0ddf426f0d7ac17d0025c72b42cc863",
+      "bodyTextPrefix": "INSTRUMENT LAB Wave bench Floor This screen is using page drawin",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/lab-preview-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/lab-preview.json"
+}
