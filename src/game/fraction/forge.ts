@@ -4,6 +4,7 @@ export type ForgeGoal = { kind: "sum"; target: Frac } | { kind: "pieces"; pieces
 
 export type ForgeAction =
   | { t: "place"; index: number }
+  | { t: "return"; index: number }
   | { t: "halve"; where: "tray" | "board"; index: number }
   | { t: "simplify"; where: "tray" | "board"; index: number }
   | { t: "join"; indices: number[] };
@@ -59,6 +60,14 @@ export function sumFracs(pieces: Frac[]): Frac {
   return simplifyFrac({ n, d });
 }
 
+export function totalForgeValue(state: ForgeState): Frac {
+  return sumFracs([...state.tray, ...state.board]);
+}
+
+export function forgeValueConserved(before: ForgeState, after: ForgeState): boolean {
+  return sameFrac(totalForgeValue(before), totalForgeValue(after));
+}
+
 export function formatFrac(piece: Frac) {
   return `${piece.n}/${piece.d}`;
 }
@@ -88,21 +97,34 @@ function replaceAt(list: Frac[], index: number, next: Frac[]): Frac[] | null {
   return [...list.slice(0, index), ...next, ...list.slice(index + 1)];
 }
 
+function conserved(before: ForgeState, after: ForgeState | null): ForgeState | null {
+  if (!after) return null;
+  return forgeValueConserved(before, after) ? after : null;
+}
+
 export function applyForge(state: ForgeState, action: ForgeAction): ForgeState | null {
   if (action.t === "place") {
     const piece = state.tray[action.index];
     if (!piece) return null;
-    return {
+    return conserved(state, {
       tray: state.tray.filter((_, index) => index !== action.index),
       board: [...state.board, clone(piece)],
-    };
+    });
+  }
+  if (action.t === "return") {
+    const piece = state.board[action.index];
+    if (!piece) return null;
+    return conserved(state, {
+      tray: [...state.tray, clone(piece)],
+      board: state.board.filter((_, index) => index !== action.index),
+    });
   }
   if (action.t === "join") {
     const picked = action.indices.filter((index) => index >= 0 && index < state.board.length);
     if (new Set(picked).size < 2) return null;
     const chosen = picked.map((index) => state.board[index]);
     const rest = state.board.filter((_, index) => !picked.includes(index));
-    return { tray: state.tray, board: [...rest, sumFracs(chosen)] };
+    return conserved(state, { tray: state.tray, board: [...rest, sumFracs(chosen)] });
   }
   const pile = action.where === "board" ? state.board : state.tray;
   if (action.t === "halve") {
@@ -110,14 +132,24 @@ export function applyForge(state: ForgeState, action: ForgeAction): ForgeState |
     if (!piece) return null;
     const next = replaceAt(pile, action.index, halves(piece));
     if (!next) return null;
-    return action.where === "board" ? { tray: state.tray, board: next } : { tray: next, board: state.board };
+    return conserved(
+      state,
+      action.where === "board"
+        ? { tray: state.tray, board: next }
+        : { tray: next, board: state.board },
+    );
   }
   if (action.t === "simplify") {
     const piece = pile[action.index];
     if (!piece || !canSimplifyFrac(piece)) return null;
     const next = replaceAt(pile, action.index, [simplifyFrac(piece)]);
     if (!next) return null;
-    return action.where === "board" ? { tray: state.tray, board: next } : { tray: next, board: state.board };
+    return conserved(
+      state,
+      action.where === "board"
+        ? { tray: state.tray, board: next }
+        : { tray: next, board: state.board },
+    );
   }
   return null;
 }
