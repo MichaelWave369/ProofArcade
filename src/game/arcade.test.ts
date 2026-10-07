@@ -5,7 +5,12 @@ import { auditAngle } from "./angle/levels.ts";
 import { auditArea } from "./area/levels.ts";
 import { auditAreaPlay } from "./area/bench.ts";
 import { auditBalance } from "./balance/levels.ts";
-import { auditScale } from "./balance/scale.ts";
+import {
+  BALANCE_PLAYS,
+  applyScale,
+  auditScale,
+  balanced,
+} from "./balance/scale.ts";
 import {
   BANDS,
   CABINETS,
@@ -328,6 +333,37 @@ describe("new stations", () => {
         assert.equal(next.turn, start.turn + 1);
         assert.equal(next.trail.length, start.trail.length + 1);
         assert.equal(sameV(next.applied, level.cards[index]), true);
+      }
+    }
+  });
+
+
+  it("keeps every legal direct Balance Lab operation symmetric and balanced", () => {
+    for (const play of BALANCE_PLAYS) {
+      for (const op of play.ops) {
+        const before = structuredClone(play.start);
+        const next = applyScale(play.start, op);
+        if (!next) continue;
+        assert.deepEqual(play.start, before, `balance level ${play.id} mutated its start state`);
+        assert.equal(balanced(play.start, play.x), true);
+        assert.equal(balanced(next, play.x), true, `balance level ${play.id} broke equality on ${op.kind} ${op.n}`);
+
+        if (op.kind === "add") {
+          assert.equal(next.left.a, play.start.left.a);
+          assert.equal(next.right.a, play.start.right.a);
+          assert.equal(next.left.b - play.start.left.b, op.n);
+          assert.equal(next.right.b - play.start.right.b, op.n);
+        } else if (op.kind === "mul") {
+          assert.equal(next.left.a, play.start.left.a * op.n);
+          assert.equal(next.left.b, play.start.left.b * op.n);
+          assert.equal(next.right.a, play.start.right.a * op.n);
+          assert.equal(next.right.b, play.start.right.b * op.n);
+        } else {
+          assert.equal(next.left.a * op.n, play.start.left.a);
+          assert.equal(next.left.b * op.n, play.start.left.b);
+          assert.equal(next.right.a * op.n, play.start.right.a);
+          assert.equal(next.right.b * op.n, play.start.right.b);
+        }
       }
     }
   });
