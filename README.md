@@ -90,7 +90,7 @@ npm run build:pages
 ```
 
 `npm run build` keeps the Grok/Vercel deployment target. `npm run build:pages`
-produces a static GitHub Pages build under `.output/public` with the project
+produces a static GitHub Pages build under `dist/client` with the project
 base path `/ProofArcade/`.
 
 Pull requests run these checks in GitHub Actions.
