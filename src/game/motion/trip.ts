@@ -77,6 +77,46 @@ export function tripDistance(speed: number, time: number) {
   return speed * time;
 }
 
+export function tripBounds(play: TripPlay) {
+  return {
+    minSpeed: 1,
+    maxSpeed: play.maxSpeed,
+    minTime: 1,
+    maxTime: play.maxTime,
+  };
+}
+
+export function snapTripControls(play: TripPlay, speed: number, time: number) {
+  const bounds = tripBounds(play);
+  const nextSpeed = Math.max(bounds.minSpeed, Math.min(bounds.maxSpeed, Math.round(speed)));
+  const nextTime = Math.max(bounds.minTime, Math.min(bounds.maxTime, Math.round(time)));
+  return {
+    speed: play.aim === "time" ? play.speed : nextSpeed,
+    time: play.aim === "speed" ? play.time : nextTime,
+  };
+}
+
+export function tripStateAt(speed: number, time: number, elapsed: number) {
+  const safeTime = Math.max(0, time);
+  const safeElapsed = Math.max(0, Math.min(safeTime, elapsed));
+  return {
+    elapsed: safeElapsed,
+    distance: tripDistance(speed, safeElapsed),
+    progress: safeTime === 0 ? 1 : safeElapsed / safeTime,
+    done: safeElapsed >= safeTime,
+  };
+}
+
+export function validTripPairs(play: TripPlay) {
+  const pairs: Array<{ speed: number; time: number }> = [];
+  for (let speed = 1; speed <= play.maxSpeed; speed += 1) {
+    for (let time = 1; time <= play.maxTime; time += 1) {
+      if (tripSolved(play, speed, time)) pairs.push({ speed, time });
+    }
+  }
+  return pairs;
+}
+
 export function tripSolved(play: TripPlay, speed: number, time: number) {
   if (!Number.isInteger(speed) || !Number.isInteger(time)) return false;
   if (speed < 1 || time < 1 || speed > play.maxSpeed || time > play.maxTime) return false;
@@ -101,6 +141,10 @@ export function auditTrip(): string[] {
     if (item.aim === "speed" && item.solutionTime !== item.time) errors.push(`lock time ${item.id}`);
     if (item.aim === "time" && item.solutionSpeed !== item.speed) errors.push(`lock speed ${item.id}`);
     if (item.aim === "either" && item.solutionSpeed > item.maxSpeed) errors.push(`cap ${item.id}`);
+    const pairs = validTripPairs(item);
+    if (!pairs.some((pair) => pair.speed === item.solutionSpeed && pair.time === item.solutionTime)) {
+      errors.push(`pair ${item.id}`);
+    }
   });
   const open = TRIP_PLAYS[0];
   if (!open || tripSolved(open, 1, 6) !== true) errors.push("either accepts another pair");

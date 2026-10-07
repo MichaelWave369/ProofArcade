@@ -43,7 +43,15 @@ import { auditGrid } from "./grid/levels.ts";
 import { auditLogic } from "./logic/levels.ts";
 import { auditMachine } from "./machine/levels.ts";
 import { auditMotion } from "./motion/levels.ts";
-import { auditTrip } from "./motion/trip.ts";
+import {
+  TRIP_PLAYS,
+  auditTrip,
+  snapTripControls,
+  tripDistance,
+  tripSolved,
+  tripStateAt,
+  validTripPairs,
+} from "./motion/trip.ts";
 import { auditOdds } from "./odds/levels.ts";
 import { auditOrbit } from "./orbit/levels.ts";
 import { auditOrbitPlay } from "./orbit/plays.ts";
@@ -452,6 +460,47 @@ describe("new stations", () => {
       assert.equal(Number.isInteger(low.w), true);
       assert.equal(Number.isInteger(low.h), true);
     }
+  });
+
+
+  it("keeps direct Motion controls discrete and the launch path faithful to d = vt", () => {
+    for (const play of TRIP_PLAYS) {
+      const snapped = snapTripControls(play, play.solutionSpeed, play.solutionTime);
+      assert.deepEqual(
+        snapped,
+        { speed: play.solutionSpeed, time: play.solutionTime },
+        `motion level ${play.id} altered its authored solution`,
+      );
+      assert.equal(tripSolved(play, snapped.speed, snapped.time), true);
+
+      const pairs = validTripPairs(play);
+      assert.ok(pairs.length >= 1, `motion level ${play.id} has no legal pair`);
+      for (const pair of pairs) {
+        assert.equal(tripSolved(play, pair.speed, pair.time), true);
+        assert.equal(tripDistance(pair.speed, pair.time), play.flag);
+      }
+
+      const quarter = tripStateAt(snapped.speed, snapped.time, snapped.time / 4);
+      const half = tripStateAt(snapped.speed, snapped.time, snapped.time / 2);
+      const finish = tripStateAt(snapped.speed, snapped.time, snapped.time + 100);
+
+      assert.equal(quarter.distance, snapped.speed * quarter.elapsed);
+      assert.equal(half.distance, snapped.speed * half.elapsed);
+      assert.equal(half.distance, quarter.distance * 2);
+      assert.equal(finish.elapsed, snapped.time);
+      assert.equal(finish.distance, play.flag);
+      assert.equal(finish.done, true);
+
+      const high = snapTripControls(play, 999.7, 999.7);
+      assert.ok(high.speed >= 1 && high.speed <= play.maxSpeed);
+      assert.ok(high.time >= 1 && high.time <= play.maxTime);
+      assert.equal(Number.isInteger(high.speed), true);
+      assert.equal(Number.isInteger(high.time), true);
+      if (play.aim === "speed") assert.equal(high.time, play.time);
+      if (play.aim === "time") assert.equal(high.speed, play.speed);
+    }
+
+    assert.ok(validTripPairs(TRIP_PLAYS[0]).length > 1, "open Motion level should accept multiple factor pairs");
   });
 
 describe("shipped identity", () => {

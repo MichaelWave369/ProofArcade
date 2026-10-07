@@ -62,7 +62,8 @@
   .balance-op-left,
   .balance-op-right,
   .slope-success-pulse,
-  .area-handle-success {
+  .area-handle-success,
+  .motion-craft-running {
     animation: none !important;
   }
 
@@ -363,4 +364,65 @@
 
 .area-handle-success {
   animation: area-handle-success 300ms ease-out;
+}
+
+
+.motion-range {
+  appearance: none;
+  height: 2rem;
+  background: transparent;
+  cursor: grab;
+  touch-action: pan-y;
+}
+
+.motion-range:active {
+  cursor: grabbing;
+}
+
+.motion-range:disabled {
+  cursor: not-allowed;
+}
+
+.motion-range::-webkit-slider-runnable-track {
+  height: 0.25rem;
+  background: transparent;
+}
+
+.motion-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: -0.5rem;
+  border-radius: 999px;
+  border: 2px solid var(--color-ink);
+  background: var(--color-gold);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-gold) 45%, transparent);
+}
+
+.motion-range::-moz-range-track {
+  height: 0.25rem;
+  background: transparent;
+}
+
+.motion-range::-moz-range-thumb {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 999px;
+  border: 2px solid var(--color-ink);
+  background: var(--color-gold);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-gold) 45%, transparent);
+}
+
+@keyframes motion-craft-running {
+  0%,
+  100% {
+    opacity: 0.88;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.motion-craft-running {
+  animation: motion-craft-running 360ms ease-in-out infinite;
 }
